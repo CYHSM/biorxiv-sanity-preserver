@@ -73,7 +73,7 @@ if __name__ == "__main__":
   num_added_total = 0
 
   if (args.search_query == 'everything'):
-    cats = [x.lower().replace(' ','_') for x in categories]
+    cats = [x.lower().replace(' ','_') for x in biorxiv_categories]
   else:
     cats = args.search_query.split('+')
 
