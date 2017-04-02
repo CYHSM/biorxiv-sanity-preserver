@@ -30,11 +30,11 @@ function build_ocoins_str(p) {
   var ocoins_info = {
     "ctx_ver": "Z39.88-2004",
     "rft_val_fmt": "info:ofi/fmt:kev:mtx:journal",
-    "rfr_id": "info:sid/arxiv-sanity.com:arxiv-sanity",
+    "rfr_id": "info:sid/biorxiv-sanity.com:biorxiv-sanity",
 
     "rft_id": p.link,
     "rft.atitle": p.title,
-    "rft.jtitle": "arXiv:" + p.pid + " [" + p.category.substring(0, p.category.indexOf('.')) + "]",
+    "rft.jtitle": "bioRxiv:" + p.pid + " [" + p.category.substring(0, p.category.indexOf('.')) + "]",
     "rft.date": p.published_time,
     "rft.artnum": p.pid,
     "rft.genre": "preprint",

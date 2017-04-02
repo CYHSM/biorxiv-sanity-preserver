@@ -220,7 +220,7 @@ def intmain():
   papers = [db[pid] for pid in DATE_SORTED_PIDS] # precomputed
   papers = papers_filter_version(papers, vstr)
   ctx = default_context(papers, render_format='recent',
-                        msg='Showing most recent Arxiv papers:')
+                        msg='Showing most recent bioRxiv papers:')
   return render_template('main.html', **ctx)
 
 @app.route("/<request_pid>")
