@@ -1,3 +1,4 @@
+
 """
 Periodically checks Twitter for tweets about arxiv papers we recognize
 and logs the tweets into mongodb database "arxiv", under "tweets" collection.
@@ -15,7 +16,7 @@ from dateutil import parser
 import twitter # pip install python-twitter
 import pymongo
 
-from utils import Config
+from utils import Config, parse_biorxiv_url
 
 # settings
 # -----------------------------------------------------------------------------
@@ -28,13 +29,12 @@ def get_keys():
   lines = open('twitter.txt', 'r').read().splitlines()
   return lines
 
-def extract_arxiv_pids(r):
+def extract_paper_ids(r):
   pids = []
   for u in r.urls:
-    m = re.search('arxiv.org/abs/(.+)', u.expanded_url)
-    if m: 
-      rawid = m.group(1)
-      pids.append(rawid)
+    pid, ver = parse_biorxiv_url(u.expanded_url)
+    if pid:
+      pids.append(pid)
   return pids
 
 def get_latest_or_loop(q):
@@ -99,11 +99,11 @@ while True:
     print('(re-) loading the paper database', Config.db_path)
     db = pickle.load(open(Config.db_path, 'rb'))
 
-  # fetch the latest mentioning arxiv.org
-  results = get_latest_or_loop('arxiv.org')
+  # fetch the latest mentioning biorxiv.org
+  results = get_latest_or_loop('biorxiv.org')
   to_insert = []
   for r in results:
-    arxiv_pids = extract_arxiv_pids(r)
+    arxiv_pids = extract_paper_ids(r)
     arxiv_pids = [p for p in arxiv_pids if p in db] # filter to those that are in our paper db
     if not arxiv_pids: continue # nothing we know about here, lets move on
     if tweets.find_one({'id':r.id}): continue # we already have this item

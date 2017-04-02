@@ -19,7 +19,7 @@ for pid,j in db.items():
   pdfs = [x['href'] for x in j['links'] if x['type'] == 'application/pdf']
   assert len(pdfs) == 1
   pdf_url = pdfs[0] + '.pdf'
-  basename = pdf_url.split('/')[-1]
+  basename = pdf_url.split('/')[-1].replace('.full', '')
   fname = os.path.join(Config.pdf_dir, basename)
 
   # try retrieve the pdf

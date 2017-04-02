@@ -12,7 +12,8 @@ import argparse
 import urllib.request
 import feedparser
 
-from utils import Config, safe_pickle_dump
+from utils import Config, safe_pickle_dump, parse_biorxiv_url, \
+                  biorxiv_categories, biorxiv_hacks
 
 def encode_feedparser_dict(d):
   """ 
@@ -37,6 +38,8 @@ def parse_arxiv_url(url):
   examples is http://arxiv.org/abs/1512.08756v2
   we want to extract the raw id and the version
   """
+  #strip off ?rss=1 if it exists
+  url = url[:url.rfind('?') if '?' in url else None]
   ix = url.rfind('/')
   idversion = url[ix+1:] # extract just the id (and the version)
   parts = idversion.split('v')
@@ -47,19 +50,13 @@ if __name__ == "__main__":
 
   # parse input arguments
   parser = argparse.ArgumentParser()
-  parser.add_argument('--search-query', type=str,
-                      default='cat:cs.CV+OR+cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL+OR+cat:cs.NE+OR+cat:stat.ML',
-                      help='query used for arxiv API. See http://arxiv.org/help/api/user-manual#detailed_examples')
-  parser.add_argument('--start-index', type=int, default=0, help='0 = most recent API result')
-  parser.add_argument('--max-index', type=int, default=10000, help='upper bound on paper index we will fetch')
-  parser.add_argument('--results-per-iteration', type=int, default=100, help='passed to arxiv API')
-  parser.add_argument('--wait-time', type=float, default=5.0, help='lets be gentle to arxiv API (in number of seconds)')
-  parser.add_argument('--break-on-no-added', type=int, default=1, help='break out early if all returned query papers are already in db? 1=yes, 0=no')
+  parser.add_argument('--search_query', type=str, default='everything', help='bioRxiv category to download e.g. genomics+bioinformatics')
+  parser.add_argument('--wait-time', type=float, default=1.0, help='lets be gentle to biorxiv (in number of seconds)')
   args = parser.parse_args()
 
   # misc hardcoded variables
-  base_url = 'http://export.arxiv.org/api/query?' # base api query url
-  print('Searching arXiv for %s' % (args.search_query, ))
+  base_url = 'http://connect.biorxiv.org/biorxiv_xml.php?'
+  print('Searching bioRxiv for %s' % (args.search_query, ))
 
   # lets load the existing database to memory
   try:
@@ -74,11 +71,15 @@ if __name__ == "__main__":
   # main loop where we fetch the new results
   print('database has %d entries at start' % (len(db), ))
   num_added_total = 0
-  for i in range(args.start_index, args.max_index, args.results_per_iteration):
 
-    print("Results %i - %i" % (i,i+args.results_per_iteration))
-    query = 'search_query=%s&sortBy=lastUpdatedDate&start=%i&max_results=%i' % (args.search_query,
-                                                         i, args.results_per_iteration)
+  if (args.search_query == 'everything'):
+    cats = [x.lower().replace(' ','_') for x in categories]
+  else:
+    cats = args.search_query.split('+')
+
+  for cat in cats:
+    print("Downloading %s..." % cat)
+    query = 'subject=%s' % cat
     with urllib.request.urlopen(base_url+query) as url:
       response = url.read()
     parse = feedparser.parse(response)
@@ -89,13 +90,13 @@ if __name__ == "__main__":
       j = encode_feedparser_dict(e)
 
       # extract just the raw arxiv id and version for this paper
-      rawid, version = parse_arxiv_url(j['id'])
+      rawid, version = parse_biorxiv_url(j['id'])
       j['_rawid'] = rawid
       j['_version'] = version
 
       # add to our database if we didn't have it before, or if this is a new version
       if not rawid in db or j['_version'] > db[rawid]['_version']:
-        db[rawid] = j
+        db[rawid] = biorxiv_hacks(j, cat)
         print('Updated %s added %s' % (j['updated'].encode('utf-8'), j['title'].encode('utf-8')))
         num_added += 1
         num_added_total += 1
@@ -106,12 +107,8 @@ if __name__ == "__main__":
     print('Added %d papers, already had %d.' % (num_added, num_skipped))
 
     if len(parse.entries) == 0:
-      print('Received no results from arxiv. Rate limiting? Exiting. Restart later maybe.')
+      print('Received no results from bioRxiv. Rate limiting? Exiting. Restart later maybe.')
       print(response)
-      break
-
-    if num_added == 0 and args.break_on_no_added == 1:
-      print('No new papers were added. Assuming no new papers exist. Exiting.')
       break
 
     print('Sleeping for %i seconds' % (args.wait_time , ))

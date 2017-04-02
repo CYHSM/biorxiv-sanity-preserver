@@ -126,7 +126,7 @@ function addPapers(num, dynamic) {
     // show raw arxiv id
     ldiv.append('span').classed('spid', true).html(p.pid);
     // access PDF of the paper
-    var pdf_link = p.link.replace("abs", "pdf"); // convert from /abs/ link to /pdf/ link. url hacking. slightly naughty
+    var pdf_link = p.link + '.full'
     if(pdf_link === p.link) { var pdf_url = pdf_link } // replace failed, lets fall back on arxiv landing page
     else { var pdf_url = pdf_link + '.pdf'; }
     ldiv.append('a').attr('href', pdf_url).attr('target', '_blank').html('pdf');

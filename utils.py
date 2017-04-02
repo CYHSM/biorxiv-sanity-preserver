@@ -97,4 +97,86 @@ def strip_version(idstr):
 
 # "1511.08198v1" is an example of a valid arxiv id that we accept
 def isvalidid(pid):
-  return re.match('^\d+\.\d+(v\d+)?$', pid)
+  return re.match('^\d+(v\d+)?$', pid)
+
+
+def parse_biorxiv_url(url):
+  """
+  examples:
+
+  http://biorxiv.org/content/early/2017/03/24/120444?rss=1
+  http://biorxiv.org/content/early/2017/03/24/120444
+  http://biorxiv.org/cgi/content/short/121814v1
+
+  we want to extract the raw id and the version
+  """
+  if not 'biorxiv.org/' in url: return None, None
+
+  #strip off ?rss=1 if it exists
+  url = url[:url.find('?') if '?' in url else None]
+  ix = url.rfind('/')
+  idversion = url[ix+1:] # extract just the id (and the version)
+  parts = idversion.split('v')
+  if len(parts) > 2:
+      print('error parsing url ' + url)
+      return None, None
+  if len(parts) == 1:
+    return parts[0], None
+  else:
+    try:
+      return parts[0], int(parts[1])
+    except ValueError:
+      return parts[0], None
+
+def biorxiv_hacks(entry, cat):
+
+  # add pdf link
+  norss = lambda x: x[:x.rfind('?') if '?' in x else None]
+  entry['link'] = norss(entry['link'])
+  entry['links'].append({'type': 'application/pdf', 'href': entry['link']+'.full',
+      'rel': 'alternate'})
+  for i, link in enumerate(entry['links']):
+      entry['links'][i]['href'] = norss(link['href'])
+
+  # add published date
+  entry['published'] = entry['prism_publicationdate']
+  entry['arxiv_primary_category'] = {'term':cat}
+
+  # add tags
+  entry['tags'] = [{'term': cat}]
+
+  # remove empty author entries
+  entry['authors'] = [x for x in entry['authors'] if x]
+
+  return entry
+
+
+biorxiv_categories = ['Animal Behavior and Cognition',
+              'Biochemistry',
+              'Bioengineering',
+              'Bioinformatics',
+              'Biophysics',
+              'Cancer Biology',
+              'Cell Biology',
+              'Clinical Trials',
+              'Developmental Biology',
+              'Ecology',
+              'Epidemiology',
+              'Evolutionary Biology',
+              'Evolutionary Biology',
+              'Genetics',
+              'Genomics',
+              'Immunology',
+              'Microbiology',
+              'Molecular Biology',
+              'Neuroscience',
+              'Paleontology',
+              'Pathology',
+              'Pharmacology and Toxicology',
+              'Physiology',
+              'Plant Biology',
+              'Scientific Communication and Education',
+              'Synthetic Biology',
+              'Systems Biology',
+              'Zoology'
+             ]
