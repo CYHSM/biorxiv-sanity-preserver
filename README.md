@@ -3,7 +3,7 @@
 
 This project is a web interface that attempts to tame the overwhelming flood of papers on bioRxiv. It allows researchers to keep track of recent papers, search for papers, sort papers by similarity to any paper, see recent popular papers, to add papers to a personal library, and to get personalized recommendations of (new or old) bioRxiv papers. This code is currently running live at [www.biorxiv-sanity.com/](http://www.biorxiv-sanity.com/), where it's serving 1,000+ papers from all bioRxiv categories over the last ~3 months.
 
-![user interface](https://raw.github.com/gokceneraslan/biorxiv-sanity-preserver/master/ui.jpeg)
+![user interface](ui.jpeg)
 
 ### Code layout
 
