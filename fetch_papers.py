@@ -95,7 +95,9 @@ if __name__ == "__main__":
       j['_version'] = version
 
       # add to our database if we didn't have it before, or if this is a new version
-      if not rawid in db or j['_version'] > db[rawid]['_version']:
+      if (j['_rawid'] is not None  and j['_version'] is not None) and \
+         (not rawid in db or j['_version'] > db[rawid]['_version']):
+
         db[rawid] = biorxiv_hacks(j, cat)
         print('Updated %s added %s' % (j['updated'].encode('utf-8'), j['title'].encode('utf-8')))
         num_added += 1
